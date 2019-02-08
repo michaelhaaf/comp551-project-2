@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 
-import numpy
 import argparse
 
-from sklearn import metrics
-from sklearn.metrics import accuracy_score
 from sklearn.pipeline import Pipeline, FeatureUnion, make_pipeline
 from sklearn.svm import LinearSVC
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 
-from source.dataer import read_files_to_array, print_results_to_csv, read_files_to_dict
+from src.dataer import *
+from src.dataer import print_metrics_to_file
+from src.plotter import plot_roc
 
 SEED = 42
 
 classifier_dict = {
-    'nb': MultinomialNB(),
+    'mnb': MultinomialNB(),
+    'bnb': BernoulliNB(),
     'log_reg': LogisticRegression(),
     'lin_svm': LinearSVC(),
     'sgd': SGDClassifier()
@@ -27,7 +27,9 @@ feature_dict = {
     'both_gram': CountVectorizer(ngram_range=(1,2))
 }
 
-cv_parameters = {}
+cv_parameters = {
+    'clf__alpha': (0, 0.5, 1.0)
+}
 
 def construct_pipeline(selected_features, selected_classifier):
     feature_pipelines = construct_feature_pipelines(selected_features)
@@ -77,28 +79,22 @@ def main(cmd_args):
     print('done')
 
 
-    ### predict and evaluate
+    ### predict
     print('performing prediction/evaluation...')
     y_val_results = classifier.predict(X_val)
     y_test_results = classifier.predict(test_data.values())
 
-    if cmd_args.perform_cv:
-        print(classifier.best_params_)
-        print('overall accuracy: ', classifier.best_score_)
-    else:
-        print('overall accuracy: ', metrics.accuracy_score(y_val, y_val_results))
-    print(metrics.classification_report(y_val, y_val_results))
-    # print(confusion_matrix(y_test, y_pred))
-    # plot_coefficients(pipeline.named_steps['clf'], get_feature_names_from_pipeline(pipeline))
 
-    ### print test results
-    print_results_to_csv(test_data.keys(), y_test_results, cmd_args)
+    ### print results
+    print('generating reports...')
+    result_dir = create_result_dir(cmd_args)
+    create_submission_file(result_dir, test_data.keys(), y_test_results)
+    print_metrics_to_file(result_dir, classifier, cmd_args, y_val, y_val_results)
+    plot_roc(result_dir, y_val, y_val_results)
 
 
 if __name__ == "__main__":
 
-    selectable_features = ['both_gram']
-    selectable_models = ['nb']
     parser = argparse.ArgumentParser(description='attempt to classify the authors of some parsed texts')
     parser.add_argument('--selected_features', nargs='+', choices=feature_dict.keys(), default='both_gram',
                         help='the feature sets to analyze. selecting more than one will combine all features in parallel')
