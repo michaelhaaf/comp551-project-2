@@ -1,12 +1,11 @@
 from sklearn.base import BaseEstimator, TransformerMixin
 
 class CustomNB(BaseEstimator, TransformerMixin):
-    def apply(self, tags):
+
+
+    def transform(self, X, y=None):
         return self
 
-    def transform(self, tags_list, y=None):
-        return self
-
-    def fit(self, tags_list, y=None):
+    def fit(self, X, y=None):
         return self
 

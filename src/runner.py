@@ -8,10 +8,11 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn.linear_model import LogisticRegression, SGDClassifier
-
-from src.dataer import *
-from src.dataer import print_metrics_to_file
-from src.plotter import plot_roc
+from sklearn.feature_extraction.text import TfidfTransformer
+from dataer import *
+from dataer import print_metrics_to_file
+from features import SentimentScorer
+from plotter import plot_roc
 
 SEED = 42
 
@@ -24,7 +25,8 @@ classifier_dict = {
 }
 
 feature_dict = {
-    'both_gram': CountVectorizer(ngram_range=(1,2))
+    'both_gram': CountVectorizer(ngram_range=(1,2)),
+    'sent_score': SentimentScorer()
 }
 
 cv_parameters = {
@@ -35,6 +37,7 @@ def construct_pipeline(selected_features, selected_classifier):
     feature_pipelines = construct_feature_pipelines(selected_features)
     return Pipeline([
         ('features', FeatureUnion(feature_pipelines)),
+        ('tfidf', TfidfTransformer()),
         ('clf', classifier_dict[selected_classifier])
     ])
 
