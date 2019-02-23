@@ -1,15 +1,17 @@
-# 
-from bernoulliNB_Estimator_Class import bernoulliNB_Estimator
+
 #X_train, X_val, y_train, y_val = extract()
 #run the split function 
 from math import log
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy 
+from scipy.sparse import find
 
-X_train=X_train.tolist()
-y_train=y_train.tolist()
-X_val=X_val.tolist()
+X_train, X_val, y_train, y_val = extract()
+
+#X_train=X_train.tolist()
+#y_train=y_train.tolist()
+#X_val=X_val.tolist()
 X=X_train
 Y=y_train
 

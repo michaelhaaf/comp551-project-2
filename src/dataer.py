@@ -33,7 +33,7 @@ def create_submission_file(res_dir, keys, y_results):
         csv_writer = csv.writer(csv_file)
         csv_writer.writerow(['Id', 'Category'])
         for key, result in zip(keys, y_results):
-            csv_writer.writerow([key, result])
+            csv_writer.writerow([key, int(result)])
 
 
 def create_result_dir(cmd_args):

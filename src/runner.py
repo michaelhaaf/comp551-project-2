@@ -1,18 +1,21 @@
 #!/usr/bin/env python
 
 import argparse
+import multiprocessing
+import timeit
 
 from sklearn.pipeline import Pipeline, FeatureUnion, make_pipeline
 from sklearn.svm import LinearSVC
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.feature_extraction.text import TfidfTransformer
+
 from dataer import *
 from dataer import print_metrics_to_file
-from features import SentimentScorer
 from plotter import plot_roc
+from goodreads_utilities import rand, random_subset
 
 SEED = 42
 
@@ -20,37 +23,33 @@ classifier_dict = {
     'mnb': MultinomialNB(),
     'bnb': BernoulliNB(),
     'log_reg': LogisticRegression(),
-    'lin_svm': LinearSVC(),
+    'lin_svm': LinearSVC(C=0.8),
     'sgd': SGDClassifier()
 }
 
-feature_dict = {
-    'both_gram': CountVectorizer(ngram_range=(1,2)),
-    'sent_score': SentimentScorer()
-}
-
 cv_parameters = {
-    'clf__alpha': (0, 0.5, 1.0)
+    'clf__C': (0.8, 0.7)
 }
 
-def construct_pipeline(selected_features, selected_classifier):
-    feature_pipelines = construct_feature_pipelines(selected_features)
+stop_list=['read','reading','books','book','author',
+           'write','writer','writers','writing','written'
+           ,'wrote']
+def construct_pipeline(selected_classifier):
     return Pipeline([
-        ('features', FeatureUnion(feature_pipelines)),
-        ('tfidf', TfidfTransformer()),
+        ('ft', TfidfVectorizer(sublinear_tf=True,token_pattern= r'\w{1,}',stop_words=stop_list,max_df=0.55,
+                               max_features=500000, min_df=1, ngram_range=(1, 2), binary=False)),
         ('clf', classifier_dict[selected_classifier])
     ])
 
 
-def construct_feature_pipelines(selected_features):
-    return [(f, make_pipeline(feature_dict[f])) for f in selected_features]
+if __name__ == "__main__":
 
-
-# def get_feature_names_from_pipeline(pipeline):
-#     return list(pipeline.named_steps['features'].transformer_list[0][1].named_steps.values())[1].get_feature_names()
-
-
-def main(cmd_args):
+    parser = argparse.ArgumentParser(description='attempt to classify the authors of some parsed texts')
+    parser.add_argument('--selected_classifier', choices=classifier_dict.keys(), default='nb',
+                        help='the model to use')
+    parser.add_argument('--perform_cv', action='store_true',
+                        help='if selected, perform cross-validation. recommended for final results, not for testing')
+    cmd_args = parser.parse_args()
 
     ### prepare data
     print('preparing data...')
@@ -64,13 +63,25 @@ def main(cmd_args):
     p_labels = [1] * len(p_data_train)
     labels = n_labels + p_labels
 
-    X_train, X_val, y_train, y_val = train_test_split(train_data, labels, test_size=0.20, random_state=SEED)
+    X_train, X_val, y_train, y_val = train_test_split(train_data, labels, test_size=0.2, random_state=SEED)
     print('done')
+
+    ### append Goodreads feature info
+    X_train = X_train.tolist()
+    X_val = X_val.tolist()
+
+    size_of_RS = 8000
+    RS_seed = 81821
+    r = 10
+    X_goodreads, y_goodreads = rand(r)
+    X_goodreads, y_goodreads = random_subset(X_goodreads, y_goodreads, RS_seed, size_of_RS)
+    X_train = X_train + X_goodreads
+    y_train = y_train + y_goodreads
 
     ### prepare feature/classifier pipeline
     print('preparing feature/classifier pipeline...')
-    pipeline = construct_pipeline(cmd_args.selected_features, cmd_args.selected_classifier)
-    grid_search = GridSearchCV(pipeline, cv_parameters, cv=5, n_jobs=-1, verbose=100)
+    pipeline = construct_pipeline(cmd_args.selected_classifier)
+    grid_search = GridSearchCV(pipeline, cv_parameters, cv=5, n_jobs=4, verbose=100)
 
     classifier = None
     if cmd_args.perform_cv:
@@ -78,7 +89,9 @@ def main(cmd_args):
     else:
         classifier = pipeline
 
+    start_time = timeit.default_timer()
     classifier.fit(X_train, y_train)
+    print(timeit.default_timer() - start_time)
     print('done')
 
 
@@ -96,15 +109,3 @@ def main(cmd_args):
     plot_roc(result_dir, y_val, y_val_results)
 
 
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='attempt to classify the authors of some parsed texts')
-    parser.add_argument('--selected_features', nargs='+', choices=feature_dict.keys(), default='both_gram',
-                        help='the feature sets to analyze. selecting more than one will combine all features in parallel')
-    parser.add_argument('--selected_classifier', choices=classifier_dict.keys(), default='nb',
-                        help='the model to use')
-    parser.add_argument('--perform_cv', action='store_true',
-                        help='if selected, perform cross-validation. recommended for final results, not for testing')
-    args = parser.parse_args()
-
-    main(args)
