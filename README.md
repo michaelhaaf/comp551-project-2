@@ -13,7 +13,7 @@ python3 ./source/runner.py --selected_classifier mnb
 # Results
 results are printed to timestamped directories within the ./results directory. ROC curve, accuracy/FI, and the submission file are automatically generated here.
 
-# Instructions for Reproducing our Best Results (using Goodreads and Tfidf tuning Tests)
+# Instructions for Reproducing our Best Results (using Goodreads data)
 
 0) download the goodreads data set . will be needed to reproduce kaggle results 
 https://www.kaggle.com/gnanesh/goodreads-book-reviews#br.csv 
@@ -23,6 +23,7 @@ the dataset wasn't included in folder because of it's large size
 
 2) Run the code as described at the top of the readme
 
+3) *If you don't use this data*, you'll need to comment out lines 69-79 in runner.py [sorry it's hardcoded]
 
 # Custom Naive Bayes :
 
