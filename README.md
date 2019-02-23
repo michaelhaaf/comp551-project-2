@@ -15,11 +15,14 @@ results are printed to timestamped directories within the ./results directory. R
 
 # Instructions for Reproducing our Best Results (using Goodreads and Tfidf tuning Tests)
 
-0 - download the goodreads data set . will be needed to reproduce kaggle results 
+0) download the goodreads data set . will be needed to reproduce kaggle results 
 https://www.kaggle.com/gnanesh/goodreads-book-reviews#br.csv 
 the dataset wasn't included in folder because of it's large size 
-1 - Extract the good reads data set, place it in the same directory as runner.py 
-2 - Run the code as described at the top of the readme
+
+1) Extract the good reads data set, place it in the same directory as runner.py 
+
+2) Run the code as described at the top of the readme
+
 
 # Custom Naive Bayes :
 
