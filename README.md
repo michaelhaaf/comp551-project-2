@@ -14,3 +14,12 @@ python3 ./source/runner.py --selected_features both_gram --selected_classifier m
 
 # Results
 results are printed to timestamped directories within the ./results directory. ROC curve, accuracy/FI, and the submission file are automatically generated here.
+
+# Custom Naive Bayes Instructions:
+
+Before Running the code you need to have you train test split ready
+The X and Y values are converted to list for convenience (from numpy)
+Naive Bayes Run Uses CountVectorizer to create an input and the creates a NB classifier object
+that object is the fitted into the training data which is directly followed by a prediction
+for the parameters in these files an accuracy of 87.74 was obtained
+
